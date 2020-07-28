@@ -79,31 +79,3 @@ func dbConn(mc MysqlConn) (db *sql.DB) {
 	return db
 }
 
-/*func Delete(mc MysqlConn, user string) string {
-	var resUser string
-	var resHost string
-	var resultsArr []string
-
-	db := dbConn(mc)
-	defer db.Close()
-
-	sqlQuery := "DROP USER IF EXISTS ?"
-	stmt, err := db.Prepare(sqlQuery)
-	util.LogError(err)
-	res, err := stmt.Query(user)
-	util.LogError(err)
-
-	for res.Next() {
-		err = res.Scan(&resUser, &resHost)
-		util.LogError(err)
-		resultsArr = append(resultsArr, resHost)
-	}
-
-	res.Close()
-	stmt.Close()
-
-	results := strings.Join(resultsArr, ",")
-
-	return results
-}*/
-
