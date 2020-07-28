@@ -4,18 +4,20 @@ import (
 	"fmt"
 	ldap "github.com/go-ldap/ldap"
 	util "github.com/hangchan/shield/pkg/util"
+	"sort"
+	"strings"
 )
 
 type LdapConn struct {
 	LdapURL 		string
 	BaseDN			string
 	BindUser		string
-	BindPassword	string
+	BindPassword		string
 	LdapUser		string
 }
 
-func Test(lc LdapConn, memberUid string) []string {
-	var results []string
+func Search(lc LdapConn, memberUid string) string {
+	var resultArr []string
 	filter := fmt.Sprintf("(&(objectClass=posixGroup)(memberUid=%v))", memberUid)
 	//filter := "(&(objectClass=posixGroup)(memberUid=hchan))"
 
@@ -37,9 +39,32 @@ func Test(lc LdapConn, memberUid string) []string {
 	util.LogError(err)
 
 	for _, entry := range sr.Entries {
-		results = append(results, fmt.Sprintf("%s: %v\n", entry.DN, entry.GetAttributeValue("cn")))
+		//results = append(results, fmt.Sprintf("%s: %v\n", entry.DN, entry.GetAttributeValue("cn")))
+		resultArr = append(resultArr, fmt.Sprintf("%v", entry.GetAttributeValue("cn")))
 	}
+
+	sort.Strings(resultArr)
+	results := strings.Join(resultArr, ",")
 
 	return results
 
 }
+
+/*
+func Delete(lc LdapConn, memberUid string) string {
+	filter := fmt.Sprintf("(&(objectClass=posixGroup)(memberUid=%v))", memberUid)
+	//filter := "(&(objectClass=posixGroup)(memberUid=hchan))"
+
+	l, err := ldap.DialURL(lc.LdapURL)
+	util.LogError(err)
+	err = l.Bind(lc.BindUser, lc.BindPassword)
+	util.LogError(err)
+	defer l.Close()
+
+	req := ldap.NewModifyDNRequest("CN=fooUser,OU=Users,DC=example,DC=com", "CN=fooUser", true, "OU=SuperUsers,DC=example,DC=com")
+	if err = conn.ModifyDN(req); err != nil {
+		log.Fatalf("Failed to modify userDN: %s\n", err)
+	}
+
+}
+*/
