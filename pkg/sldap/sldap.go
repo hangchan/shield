@@ -5,27 +5,31 @@ import (
 	ldap "github.com/go-ldap/ldap"
 	util "github.com/hangchan/shield/pkg/util"
 	"sort"
-	"strings"
 )
 
 type LdapConn struct {
 	LdapURL 		string
 	BaseDN			string
 	BindUser		string
-	BindPassword		string
+	BindPassword	string
 	LdapUser		string
 }
 
-func Search(lc LdapConn, memberUid string) string {
-	var resultArr []string
-	filter := fmt.Sprintf("(&(objectClass=posixGroup)(memberUid=%v))", memberUid)
-	//filter := "(&(objectClass=posixGroup)(memberUid=hchan))"
-
+func ldapConn(lc LdapConn) *ldap.Conn {
 	l, err := ldap.DialURL(lc.LdapURL)
 	util.LogError(err)
 	err = l.Bind(lc.BindUser, lc.BindPassword)
 	util.LogError(err)
+
+	return l
+}
+
+func Search(lc LdapConn, memberUid string) []string {
+	l := ldapConn(lc)
 	defer l.Close()
+
+	var resultArr []string
+	filter := fmt.Sprintf("(&(objectClass=posixGroup)(memberUid=%v))", memberUid)
 
 	searchRequest := ldap.NewSearchRequest(
 		lc.BaseDN, // The base dn to search
@@ -44,27 +48,21 @@ func Search(lc LdapConn, memberUid string) string {
 	}
 
 	sort.Strings(resultArr)
-	results := strings.Join(resultArr, ",")
 
-	return results
+	return resultArr
 
 }
 
-/*
-func Delete(lc LdapConn, memberUid string) string {
-	filter := fmt.Sprintf("(&(objectClass=posixGroup)(memberUid=%v))", memberUid)
-	//filter := "(&(objectClass=posixGroup)(memberUid=hchan))"
-
-	l, err := ldap.DialURL(lc.LdapURL)
-	util.LogError(err)
-	err = l.Bind(lc.BindUser, lc.BindPassword)
-	util.LogError(err)
+func RemoveFromGroup(lc LdapConn, memberUid string, group string) {
+	l := ldapConn(lc)
 	defer l.Close()
 
-	req := ldap.NewModifyDNRequest("CN=fooUser,OU=Users,DC=example,DC=com", "CN=fooUser", true, "OU=SuperUsers,DC=example,DC=com")
-	if err = conn.ModifyDN(req); err != nil {
-		log.Fatalf("Failed to modify userDN: %s\n", err)
-	}
+	groupOU := "Groups"
+
+	mr := ldap.NewModifyRequest(fmt.Sprintf("cn=%s,ou=%s,%s", group, groupOU, lc.BaseDN), []ldap.Control{})
+	mr.Delete("memberUid", []string{fmt.Sprintf("%s", memberUid)})
+
+	err := l.Modify(mr)
+	util.LogError(err)
 
 }
-*/

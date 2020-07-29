@@ -5,7 +5,6 @@ import (
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/hangchan/shield/pkg/util"
-	"strings"
 )
 
 type MysqlConn struct {
@@ -16,7 +15,7 @@ type MysqlConn struct {
 	DbAddress	string
 }
 
-func Search(mc MysqlConn, user string) string {
+func Search(mc MysqlConn, user string) []string {
 	sqlQuery := "SELECT user,host FROM mysql.user WHERE user = ?"
 	return query(mc, user, sqlQuery)
 }
@@ -26,7 +25,7 @@ func DropUser(mc MysqlConn, user string, host string) {
 	exec(mc, sqlQuery)
 }
 
-func query(mc MysqlConn, user string, query string) string {
+func query(mc MysqlConn, user string, query string) []string {
 	var resUser string
 	var resHost string
 	var resultsArr []string
@@ -49,9 +48,7 @@ func query(mc MysqlConn, user string, query string) string {
 	res.Close()
 	stmt.Close()
 
-	results := strings.Join(resultsArr, ",")
-
-	return results
+	return resultsArr
 }
 
 func exec(mc MysqlConn, query string) {
